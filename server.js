@@ -52,15 +52,40 @@ app.post("/register", async (req, res) => {
   });
 });
 
-app.post("/login", async (req,res)=>{
-  const user = await User.findOne({email:req.body.email});
-  if(!user) return res.status(400).send("User not found");
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-  const valid = await bcrypt.compare(req.body.password,user.password);
-  if(!valid) return res.status(400).send("Invalid password");
+    // Check user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
 
-  const token = jwt.sign({id:user._id},process.env.JWT_SECRET);
-  res.json({token});
+    // Check password
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      return res.status(400).json({ message: "Invalid password" });
+    }
+
+    // Check JWT secret
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET missing");
+    }
+
+    // Create token
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({ token });
+
+  } catch (err) {
+    console.error("LOGIN ERROR:", err.message);
+    res.status(500).json({ error: "Login failed", details: err.message });
+  }
 });
 
 app.get("/dashboard", auth, (req,res)=>{
