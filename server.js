@@ -38,11 +38,18 @@ const adminOnly = (req,res,next)=>{
   next();
 };
 
-app.post("/register", async (req,res)=>{
-  const hash = await bcrypt.hash(req.body.password,10);
-  const user = await User.create({email:req.body.email,password:hash});
-  res.json(user);
-});
+app.post("/register", async (req, res) => {
+  const hash = await bcrypt.hash(req.body.password, 10);
+
+  const user = await User.create({
+    email: req.body.email,
+    password: hash
+  });
+
+  res.json({
+    _id: user._id,
+    email: user.email
+  });
 
 app.post("/login", async (req,res)=>{
   const user = await User.findOne({email:req.body.email});
